@@ -1,0 +1,7 @@
+﻿撮影した画像の一時保存場所→SDカード?
+
+参考ページ
+動画をSDに保存
+https://www.support.softbankmobile.co.jp/partner_st/home_tech9/column6-3.cfm
+SDカードにファイルを配置
+http://yan-note.blogspot.jp/2012/09/android-sd_28.html
