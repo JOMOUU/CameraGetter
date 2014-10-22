@@ -1,0 +1,8 @@
+INDEX VERSION 1.126+/Users/Red_Kerry/Develope/java/Camera_man/.metadata/.plugins/org.eclipse.jdt.core
+4015395866.index
+1270315800.index
+2609562386.index
+3825593353.index
+1480564698.index
+795470523.index
+2682772417.index

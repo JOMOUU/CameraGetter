@@ -1,0 +1,5 @@
+package in.andante.camerapre;
+
+public interface IUIListener {
+	void onShutterButton();
+}

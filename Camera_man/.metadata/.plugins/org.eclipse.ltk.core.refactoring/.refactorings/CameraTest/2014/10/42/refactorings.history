@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="リソース名 &apos;CameraTest/res/layout/activity_camera_test.xml&apos; を &apos;main.xml&apos; に変更します" description="リソース &apos;activity_camera_test.xml&apos; の名前変更" flags="7" id="org.eclipse.ltk.core.refactoring.rename.resource" input="res/layout/activity_camera_test.xml" name="main.xml" stamp="1413122197911" updateReferences="true"/>
+</session>

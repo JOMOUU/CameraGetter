@@ -1,0 +1,264 @@
+package in.andante.camerapre;
+
+import java.io.*;
+import java.util.List;
+
+import android.content.ContentResolver;
+import android.content.ContentValues;
+import android.content.Context;
+import android.content.res.Configuration;
+import android.hardware.Camera;
+import android.hardware.Camera.Parameters;
+import android.hardware.Camera.Size;
+import android.os.Build;
+import android.os.Environment;
+import android.provider.MediaStore;
+import android.provider.MediaStore.Images;
+import android.view.MotionEvent;
+import android.view.SurfaceHolder;
+import android.view.SurfaceView;
+import android.view.ViewGroup;
+import android.widget.Toast;
+
+// 参照ページ
+// ソースコード全体について
+// http://andante.in/i/%E3%82%AB%E3%83%A1%E3%83%A9%E3%82%A2%E3%83%97%E3%83%AA/%E3%82%AB%E3%83%A1%E3%83%A9%E3%81%A7%E6%92%AE%E5%BD%B1%E3%82%92%E3%81%97%E3%81%A6%E4%BF%9D%E5%AD%98%E3%81%97%E3%81%A6%E3%81%BF%E3%82%8B%E3%80%82/
+// 画面アスペクト比の処理について
+// http://kurotofu.sytes.net/kanji/fool/?p=694
+
+// 基本的なカメラの動き
+/*
+Camera.open()でカメラを利用開始。
+↓
+SurfaceViewにプレビュー(カメラが写している画)を流しこむ。
+↓
+背景差分でスライドが切り替わったことを感知したら，写真を撮影したり保存したりする
+↓
+アクティビティが切り替わって，pdfにまとめる処理が入る
+↓
+Camera.release()で解放して終了。
+*/
+
+// 実は，カメラ機能を利用したアプリはAVDでは安定した動作が保証できない
+// 同じソースコードのアプリでも，先程は動いたのに，今は動かないといった現象が多発する
+// そのため，実機を利用することが不可欠となる
+
+// タスク
+
+// 1. 撮影した画像をSDカードに保存するようにする
+// (1. については，現段階では，仮想マシン(AVD)を用いているので，macbookproのストレージ上に仮想SDカードを作成して保存している)
+// (実機の場合は，SDカードのパスの指定方法など記述を変える必要がある)
+// (さらに，実機そのものにSDカードが差し込まれていない場合は保存できない．その場合は実機の内部ストレージに保存する必要がある)
+// (問題点1: SDカードがあるかどうか)
+// (問題点2: 端末によってSDカードのマウント先が異なるので，事前にデモに使う端末を調査する必要がある)
+
+// 2. プレビュー画面上にシャッターボタン(ソフトウェアボタン)を設置し，そのボタンで撮影できるようにする．
+// プレビュー画面の上にもう一つレイヤを作ってそこにシャッターボタンのアイコンを設置する
+// そのアイコンをタッチした時に撮影，とする必要がある
+// 予想以上に難しい・・・
+
+
+// SurfaceViewとは定期的に描画が必要となる場合に効果を発揮するクラス
+// SufaceHolder.Callbackインターフェースを使うと，SurfaceViewの生成時や破棄時に呼び出されるコールバックメソッドを実装することができます
+public class CameraView extends SurfaceView implements SurfaceHolder.Callback {
+	private Camera myCamera;// カメラインスタンス生成
+	private Context context;// アプリケーションの環境情報をグローバル(Android OSの全域）で受け渡しするためのインターフェース
+	// アクティビティの起動とかブロードキャスト、インテントの受け取りといった他のアプリからの応答を行え、リソース・クラスにアクセス可能．
+	private Boolean bool = true;
+
+	@SuppressWarnings("deprecation")
+	public CameraView(Context context) {
+		super(context);
+		this.context = context;
+		// SurfaceHolderは，Surfaceのピクセルを実際にいじったり、Surfaceの変化を監視する人のためのインターフェイスである．
+		// getHolder()は、そのSurfaceViewのホルダーのインスタンスを取得できるメソッドである．
+		getHolder().addCallback(this);
+		getHolder().setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
+	}
+    
+	// SurfaceViewが生成されたときに呼ばれるメソッド
+	public void surfaceCreated(SurfaceHolder holder) {
+		myCamera = Camera.open();// カメラを起動する
+		try {
+			myCamera.setPreviewDisplay(holder);// カメラインスタンスに画像表示先を設定
+		} catch (Exception e) {
+			e.printStackTrace();// 例外が投げられたら，メソッドが呼ばれてきた経緯を表示
+		}
+	}
+	
+	// SurfaceViewの大きさやフォーマット変化した時に呼ばれるメソッド
+	// 例えば，端末を傾けた時など．
+	public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+		myCamera.stopPreview();// 一旦カメラのプレビューを止める
+		Parameters mParam = myCamera.getParameters();
+		// 端末の方位を取得する
+	    boolean portrait = isPortrait();
+	    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.FROYO) {
+	        // android2.1以前の端末方位の処理を設定する
+	        if (portrait) {
+	            mParam.set("orientation", "portrait");
+	        } else {
+	            mParam.set("orientation", "landscape");
+	        }
+	        myCamera.setParameters(mParam);
+	    } else {
+	        // android2.2以降の端末方位の処理を設定する
+	        if (portrait) {
+	            myCamera.setDisplayOrientation(90);
+	        } else {
+	            myCamera.setDisplayOrientation(0);
+	        }
+	    }
+	    
+	    // プレビュー画面の幅と高さを端末のディスプレイサイズに合わせて設定する
+	    // いわゆるアスペクト比の調整
+	    int previewWidth = width;
+	    int previewHeight = height;
+	    if (portrait) {
+	        previewWidth = height;
+	        previewHeight = width;
+	    }
+
+	    List<Size> sizes = mParam.getSupportedPreviewSizes();
+	    int tmpHeight = 0;
+	    int tmpWidth = 0;
+	    for (Size size : sizes) {
+	        if ((size.width > previewWidth) || (size.height > previewHeight)) {
+	            continue;
+	        }
+	        if (tmpHeight < size.height) {
+	            tmpWidth = size.width;
+	            tmpHeight = size.height;
+	        }
+	    }
+	    previewWidth = tmpWidth;
+	    previewHeight = tmpHeight;
+	    
+		// プレビューサイズを設定する
+	    mParam.setPreviewSize(previewWidth, previewHeight);
+		
+		
+		ViewGroup.LayoutParams layoutParams = this.getLayoutParams();
+		float layoutHeight, layoutWidth;
+	    if (portrait) {
+	        layoutHeight = previewWidth;
+	        layoutWidth = previewHeight;
+	    } else {
+	        layoutHeight = previewHeight;
+	        layoutWidth = previewWidth;
+	    }
+
+	    float factH, factW, fact;
+	    factH = height / layoutHeight;
+	    factW = width / layoutWidth;
+	    // Select smaller factor, because the surface cannot be set to the size larger than display metrics.
+	    if (factH < factW) {
+	        fact = factH;
+	    } else {
+	        fact = factW;
+	    }
+	    layoutParams.height = (int)(layoutHeight * fact);
+	    layoutParams.width = (int)(layoutWidth * fact);
+	    this.setLayoutParams(layoutParams);
+		
+		myCamera.setParameters(mParam);//プレビューのサイズ・アスペクト比を設定する．
+		myCamera.startPreview();// プレビューを開始する
+	}
+	
+	// 画面の向きを取得する
+    protected boolean isPortrait() {
+        return (this.getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT);
+    }
+    
+    // SurfaceViewが破壊された時に呼ばれるメソッド
+	public void surfaceDestroyed(SurfaceHolder holder) {
+		myCamera.release();// カメラインスタンスの開放
+		myCamera = null;
+	}
+
+	// シャッターが押されたときに呼ばれるコールバック
+	private Camera.ShutterCallback mShutterListener = new Camera.ShutterCallback() {
+		public void onShutter() {
+			// TODO Auto-generated method stub
+		}
+	};
+
+	// 撮影時の処理をいろいろ記述していく
+	// 今回は画像の変換とデータをjpegとしてストレージに保存する処理が記述する．
+	private Camera.PictureCallback mPictureListener = new Camera.PictureCallback() {
+		public void onPictureTaken(byte[] data, Camera camera) {
+			
+			// プレビュー画面のキャプチャしたデータを内部ストレージに保存する
+			if (data != null) {
+				if (!sdcardWriteReady()) {
+					Toast.makeText(context, "SDCARDが認識されません。", Toast.LENGTH_SHORT).show();
+					bool = true;
+					camera.startPreview();
+					return;
+				}
+				FileOutputStream foStream = null;
+				// フォルダのパスを表示する
+				File file = new File(Environment.getExternalStorageDirectory().getPath() + "/cmr/");
+				// フォルダが存在しなかった場合にフォルダを作成する
+				if (!file.exists()) {
+					file.mkdir();
+				}
+				// これで他のとかぶらない名前の設定ができる
+				String imgName = Environment.getExternalStorageDirectory()
+						.getPath()
+						+ "/cmr/"
+						+ System.currentTimeMillis()
+						+ ".jpg";
+
+				try {
+					foStream = new FileOutputStream(imgName);
+					foStream.write(data);// データの書き込み
+					foStream.close();
+
+					ContentValues values = new ContentValues();
+					ContentResolver contentResolver = context.getContentResolver();
+					values.put(Images.Media.MIME_TYPE, "image/jpeg");
+					values.put("_data", imgName);
+					try {
+						contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
+					} catch (Exception e) {
+						Toast.makeText(context, "再起動後に画像が認識されます。", Toast.LENGTH_SHORT).show();
+						e.printStackTrace();
+					}
+				} catch (Exception e) {
+					Toast.makeText(context, "ファイルの保存中にエラーが発生しました。", Toast.LENGTH_SHORT).show();
+					e.printStackTrace();
+				}
+				bool = true;
+				camera.startPreview();
+			} else {
+				Toast.makeText(context, "データが取得できませんでした。", Toast.LENGTH_SHORT).show();
+				bool = true;
+				camera.startPreview();
+			}
+		}
+	};
+
+	// タッチイベントを取得した時に呼ばれるメソッド
+	@Override
+	public boolean onTouchEvent(MotionEvent event) {
+		if (event.getAction() == MotionEvent.ACTION_DOWN) {
+			if (myCamera != null && bool) {
+				bool = false;
+				// プレビュー画面をキャプチャする(撮影する)メソッド
+				// 第一引数: Camera.ShutterCallback shutter：シャッターが押されたときに呼ばれるコールバックを指定する
+				// 第二引数: Camera.PictureCallback raw：Rawイメージ生成後に呼ばれるコールバックを指定する
+				// 第三引数: Camera.PictureCallback jpeg：JPEGイメージ生成後に呼ばれるコールバックを指定する
+				myCamera.takePicture(mShutterListener, null, mPictureListener);
+			}
+		}
+		return true;
+	}
+	
+	// ストレージに書き込みができるかどうかを判別するメソッド
+	private boolean sdcardWriteReady() {
+		String state = Environment.getExternalStorageState();
+		return (Environment.MEDIA_MOUNTED.equals(state));
+	}
+	
+}

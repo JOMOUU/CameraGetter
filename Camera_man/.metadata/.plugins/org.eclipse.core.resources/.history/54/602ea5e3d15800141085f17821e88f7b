@@ -1,0 +1,5 @@
+package jp.co.kazukizm.camera;
+
+public interface IUIListener {
+	void onShutterButton();
+}
