@@ -21,7 +21,7 @@ public class CheckedImageArrayAdapter extends ArrayAdapter<CheckedImage> {
         CheckBox checkbox = null;  
     }  
   
-    private final static int LAYOUT_ID = R.layout.list_item;  
+    private final static int LAYOUT_ID = R.layout.list_item;
   
   
     private Context mContext;  
@@ -37,7 +37,7 @@ public class CheckedImageArrayAdapter extends ArrayAdapter<CheckedImage> {
     @Override  
     public View getView(int position, View convertView, ViewGroup parent) {  
         final ViewHolder holder;
-        if (convertView == null) {  
+        if (convertView == null) {
             convertView = mInflater.inflate(LAYOUT_ID, null);  
             holder = new ViewHolder();  
             holder.imageview = (ImageView) convertView.findViewById(R.id.image);  

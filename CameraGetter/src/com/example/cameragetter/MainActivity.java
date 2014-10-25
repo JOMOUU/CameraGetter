@@ -1,13 +1,16 @@
 package com.example.cameragetter;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.TypedValue;
 import android.view.Gravity;
@@ -30,29 +33,33 @@ public class MainActivity extends Activity {
     @Override  
     public void onCreate(Bundle savedInstanceState) {  
         super.onCreate(savedInstanceState);  
-        setContentView(R.layout.activity_main);  
-  
+        setContentView(R.layout.activity_main);
+
         mGridView = (GridView)findViewById(R.id.gridView);  
         mButton = (Button)findViewById(R.id.button1);  
         mButton.setOnClickListener(ButtonSelect_OnClickListener);  
-  
+
+        
+    }  
+    
+    @Override
+    protected void onStart() {
+    	super.onStart();
         //画像データのIDを取得          
         Cursor cursor = getContentResolver().query(uri, null, null, null, null);          
         ArrayList<CheckedImage> lstItem = new ArrayList<CheckedImage>();  
         cursor.moveToFirst();     
         for (int i = 0; i < cursor.getCount(); i++){  
             long id = cursor.getLong(cursor.getColumnIndexOrThrow("_id"));  
-            lstItem.add(new CheckedImage(true,id));  
+            lstItem.add(new CheckedImage(true,id)); 
             cursor.moveToNext();  
         }  
   
         //グリッド用のアダプターを作成  
         CheckedImageArrayAdapter adapter = new CheckedImageArrayAdapter(getApplicationContext(),lstItem);  
         //グリッドにアダプターをセット  
-        mGridView.setAdapter(adapter);  
-  
-    }  
-    
+        mGridView.setAdapter(adapter);
+    }
     
     /*
      * 完了ボタンを押したときの処理
@@ -81,23 +88,19 @@ public class MainActivity extends Activity {
 				@Override
 				public void onClick(View v) {
 					// TODO 自動生成されたメソッド・スタブ
-					
 			        CheckedImageArrayAdapter adapter = (CheckedImageArrayAdapter)mGridView.getAdapter();  
-			        List<CheckedImage> lstCheckedItem = adapter.getCheckedItem();
+			        //List<CheckedImage> lstCheckedItem = adapter.getCheckedItem();
+			        List<Long> lstCheckedItemId = adapter.getCheckedItemId();
+			        System.out.println("kawaguchiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii");
+			        System.out.println(lstCheckedItemId);
 
+			        //String[] CheckedItemId = (String[])lstCheckedItemId.toArray(new String[lstCheckedItemId.size()]);
+			        
+			       // Uri uri = Uri.fromFile(new File(Environment.getExternalStorageDirectory().getPath() + "/cmr/"));
+					//getContentResolver().delete(uri, "_id=?", CheckedItemId);
+					getContentResolver().delete(uri, null, null);
 
-			        /////////////////////////////////////
-			        ///////
-			        ///////okuda
-			        ////////
-			        ////////////////////////////////////
-			        
-			        
-			        
-			        
-					//作業領域の画像全部消す
-					//getContentResolver().delete(uri, null, null);
-			        
+			        startActivity(new Intent(MainActivity.this, CameraPre.class)); //アクティビティの切り替え
 				}
 			});
             
