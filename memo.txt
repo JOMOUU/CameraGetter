@@ -9,3 +9,6 @@ http://yan-note.blogspot.jp/2012/09/android-sd_28.html
 http://techbooster.jpn.org/andriod/application/295/
 sdカードから取り出した画像の一覧表示
 http://dev.classmethod.jp/smartphone/basic-android-component-04-gridview/
+
+Viewの切り替え
+http://yamato-iphone.blogspot.jp/2011/12/viewswicher.html
