@@ -12,3 +12,6 @@ http://dev.classmethod.jp/smartphone/basic-android-component-04-gridview/
 
 Viewの切り替え
 http://yamato-iphone.blogspot.jp/2011/12/viewswicher.html
+
+安定性向上
+http://a-msy.jp/blog/?p=93
