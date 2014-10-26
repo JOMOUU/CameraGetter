@@ -80,7 +80,7 @@ public class CheckedImageArrayAdapter extends ArrayAdapter<CheckedImage> {
     public List<Long> getCheckedItemId(){
         List<Long> lstItemId = new ArrayList<Long>();  
         for ( int i = 0; i < getCount(); i++) {  
-            if (getItem(i).getChecked()){  
+            if (!getItem(i).getChecked()){
                 lstItemId.add(getItem(i).getBitmapId());  
             }  
         }                 	

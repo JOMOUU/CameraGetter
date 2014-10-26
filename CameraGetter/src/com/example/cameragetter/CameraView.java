@@ -7,6 +7,7 @@ import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.res.Configuration;
+import android.graphics.ImageFormat;
 import android.hardware.Camera;
 import android.hardware.Camera.Parameters;
 import android.hardware.Camera.Size;
@@ -75,16 +76,36 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback {
 	public void surfaceCreated(SurfaceHolder holder) {
 		myCamera = Camera.open();// カメラを起動する
 		try {
+		    myCamera.setPreviewCallback(_previewCallback); 
 			myCamera.setPreviewDisplay(holder);// カメラインスタンスに画像表示先を設定
 		} catch (Exception e) {
 			e.printStackTrace();// 例外が投げられたら，メソッドが呼ばれてきた経緯を表示
 		}
+		
 	}
+	
+	 /** 
+	  * プレビューコールバック 
+	  *   prepareSavePreviewImageコールバックで登録され、プレビュー画像を取得する 
+	  */  
+	 private final Camera.PreviewCallback _previewCallback =  
+	  new Camera.PreviewCallback() {  
+	  public void onPreviewFrame(byte[] data, Camera camera) {  
+	   //decodeYUV420SP(rgb, data, width, height);  
+	   //bitmap.setPixels(rgb, 0, width, 0, 0, width, height);  
+	  
+	   // 描画  
+	   //Canvas canv = holder.lockCanvas();  
+	   //canv.drawBitmap(bitmap, 0, 0, null);  
+	   //holder.unlockCanvasAndPost(canv);  
+	  }  
+	 };  
 	
 	// SurfaceViewの大きさやフォーマット変化した時に呼ばれるメソッド
 	// 例えば，端末を傾けた時など．
 	public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
 		myCamera.stopPreview();// 一旦カメラのプレビューを止める
+
 		Parameters mParam = myCamera.getParameters();
 		// 端末の方位を取得する
 	    boolean portrait = isPortrait();// trueなら縦，falseなら横と判別する
@@ -95,7 +116,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback {
 	        } else {
 	            mParam.set("orientation", "landscape");
 	        }
-	        myCamera.setParameters(mParam);
+	        //myCamera.setParameters(mParam);
 	    } else {
 	        // android2.2以降の端末方位の処理を設定する
 	        if (portrait) {
@@ -159,6 +180,23 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback {
 	    layoutParams.height = (int)(layoutHeight * fact);
 	    layoutParams.width = (int)(layoutWidth * fact);
 	    this.setLayoutParams(layoutParams);// レイアウトのサイズを設定する
+	    
+	    
+	    
+	    
+	    
+	    
+	    
+	  /*  
+	    // インスタンス生成はあらかじめやっておこう作戦
+        // フレームバッファ byte (NV21)
+        int size = previewWidth * previewHeight * ImageFormat.getBitsPerPixel(mParam.getPreviewFormat()) / 8;
+        byte[] mFrameBuffer = new byte[size];
+        myCamera.addCallbackBuffer(mFrameBuffer);
+		*/	
+
+	    
+	    
 		
 		myCamera.setParameters(mParam);//プレビューのサイズ・アスペクト比を設定する．
 		myCamera.startPreview();// プレビューを開始する
@@ -171,6 +209,8 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback {
     
     // SurfaceViewが破壊された時に呼ばれるメソッド
 	public void surfaceDestroyed(SurfaceHolder holder) {
+		myCamera.stopPreview();
+     	myCamera.setPreviewCallback(null);
 		myCamera.release();// カメラインスタンスの開放
 		myCamera = null;
 	}
@@ -190,7 +230,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback {
 			// プレビュー画面のキャプチャしたデータを外部ストレージに保存する
 			// 仮想マシンではなぜか内部ストレージに保存される．原因は不明
 			// どっちにしろ端末での実際に試す必要がある
-			if (data != null) {
+			if ((data[0] != 0) && (data[1] != 0) && (data[2] != 0)) {
 				if (!sdcardWriteReady()) {
 					// SDカードが認識できない場合は弾く
 					Toast.makeText(context, "SDCARDが認識されません。", Toast.LENGTH_SHORT).show();
@@ -243,11 +283,13 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback {
 		}
 	};
 
+
+	
 	// タッチイベントを取得した時に呼ばれるメソッド
 	// ディスプレイをタップした時に行いたい処理を書く
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
-		if (event.getAction() == MotionEvent.ACTION_DOWN) {
+		/*if (event.getAction() == MotionEvent.ACTION_DOWN) {
 			if (myCamera != null && bool) {
 				bool = false;
 				// プレビュー画面をキャプチャする(撮影する)メソッド
@@ -256,10 +298,13 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback {
 				// 第三引数: Camera.PictureCallback jpeg：JPEGイメージ生成後に呼ばれるコールバックを指定する
 				myCamera.takePicture(mShutterListener, null, mPictureListener);
 			}
-		}
+		}*/
 		return true;
 	}
 	
+	public void takePictureCamera(){
+		myCamera.takePicture(mShutterListener, null, mPictureListener);
+	}
 	
 	
 	// ストレージに書き込みができるかどうかを判別するメソッド

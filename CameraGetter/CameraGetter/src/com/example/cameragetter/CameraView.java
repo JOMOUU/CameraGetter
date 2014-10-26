@@ -7,6 +7,7 @@ import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.res.Configuration;
+import android.graphics.ImageFormat;
 import android.hardware.Camera;
 import android.hardware.Camera.Parameters;
 import android.hardware.Camera.Size;
@@ -75,16 +76,47 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback {
 	public void surfaceCreated(SurfaceHolder holder) {
 		myCamera = Camera.open();// カメラを起動する
 		try {
+		    myCamera.setPreviewCallback(_previewCallback); 
 			myCamera.setPreviewDisplay(holder);// カメラインスタンスに画像表示先を設定
 		} catch (Exception e) {
 			e.printStackTrace();// 例外が投げられたら，メソッドが呼ばれてきた経緯を表示
 		}
+		
 	}
+	
+	 /** 
+	  * プレビューコールバック 
+	  *   prepareSavePreviewImageコールバックで登録され、プレビュー画像を取得する 
+	  */  
+	 private final Camera.PreviewCallback _previewCallback =  
+	  new Camera.PreviewCallback() {  
+	  public void onPreviewFrame(byte[] data, Camera camera) { 
+	   //decodeYUV420SP(rgb, data, width, height);  
+	   //bitmap.setPixels(rgb, 0, width, 0, 0, width, height);  
+	  
+		  
+		  
+		  
+		  //===============================================ここ===================================/
+		  
+		  
+		  
+		  
+		  
+		  
+		  
+	   // 描画  
+	   //Canvas canv = holder.lockCanvas();  
+	   //canv.drawBitmap(bitmap, 0, 0, null);  
+	   //holder.unlockCanvasAndPost(canv);  
+	  }  
+	 };  
 	
 	// SurfaceViewの大きさやフォーマット変化した時に呼ばれるメソッド
 	// 例えば，端末を傾けた時など．
 	public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
 		myCamera.stopPreview();// 一旦カメラのプレビューを止める
+
 		Parameters mParam = myCamera.getParameters();
 		// 端末の方位を取得する
 	    boolean portrait = isPortrait();// trueなら縦，falseなら横と判別する
@@ -159,6 +191,23 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback {
 	    layoutParams.height = (int)(layoutHeight * fact);
 	    layoutParams.width = (int)(layoutWidth * fact);
 	    this.setLayoutParams(layoutParams);// レイアウトのサイズを設定する
+	    
+	    
+	    
+	    
+	    
+	    
+	    
+	  /*  
+	    // インスタンス生成はあらかじめやっておこう作戦
+        // フレームバッファ byte (NV21)
+        int size = previewWidth * previewHeight * ImageFormat.getBitsPerPixel(mParam.getPreviewFormat()) / 8;
+        byte[] mFrameBuffer = new byte[size];
+        myCamera.addCallbackBuffer(mFrameBuffer);
+		*/	
+
+	    
+	    
 		
 		myCamera.setParameters(mParam);//プレビューのサイズ・アスペクト比を設定する．
 		myCamera.startPreview();// プレビューを開始する
@@ -172,6 +221,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback {
     // SurfaceViewが破壊された時に呼ばれるメソッド
 	public void surfaceDestroyed(SurfaceHolder holder) {
 		myCamera.stopPreview();
+     	myCamera.setPreviewCallback(null);
 		myCamera.release();// カメラインスタンスの開放
 		myCamera = null;
 	}
@@ -244,6 +294,8 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback {
 		}
 	};
 
+
+	
 	// タッチイベントを取得した時に呼ばれるメソッド
 	// ディスプレイをタップした時に行いたい処理を書く
 	@Override

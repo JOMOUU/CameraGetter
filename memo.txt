@@ -12,3 +12,8 @@ http://dev.classmethod.jp/smartphone/basic-android-component-04-gridview/
 
 Viewの切り替え
 http://yamato-iphone.blogspot.jp/2011/12/viewswicher.html
+
+リアルタイムの画像処理
+http://blog.prunus.jp/2010/06/blog-post.html
+http://tech.kayac.com/archive/android_slit_scan.html
+http://techbooster.jpn.org/andriod/device/9632/

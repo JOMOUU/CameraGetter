@@ -91,16 +91,25 @@ public class MainActivity extends Activity {
 			        CheckedImageArrayAdapter adapter = (CheckedImageArrayAdapter)mGridView.getAdapter();  
 			        //List<CheckedImage> lstCheckedItem = adapter.getCheckedItem();
 			        List<Long> lstCheckedItemId = adapter.getCheckedItemId();
-			        System.out.println("kawaguchiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii");
-			        System.out.println(lstCheckedItemId);
-
-			        //String[] CheckedItemId = (String[])lstCheckedItemId.toArray(new String[lstCheckedItemId.size()]);
-			        
-			       // Uri uri = Uri.fromFile(new File(Environment.getExternalStorageDirectory().getPath() + "/cmr/"));
-					//getContentResolver().delete(uri, "_id=?", CheckedItemId);
-					getContentResolver().delete(uri, null, null);
-
-			        startActivity(new Intent(MainActivity.this, CameraPre.class)); //アクティビティの切り替え
+			        if(lstCheckedItemId.size() > 0){
+				        String where = "";
+				        String[] CheckedItemId = new String[lstCheckedItemId.size()];
+				        for(int i = 0 ; i < lstCheckedItemId.size(); i++){
+				        	CheckedItemId[i] = lstCheckedItemId.get(i).toString();
+				        	if(i == lstCheckedItemId.size()-1){
+				        		where += "_id=?";			        		
+				        	}else{
+				        		where += "_id=? OR ";
+				        	}
+				        }
+				        
+				        // Uri uri = Uri.fromFile(new File(Environment.getExternalStorageDirectory().getPath() + "/cmr/"));
+						getContentResolver().delete(uri, where, CheckedItemId);
+						//getContentResolver().delete(uri, null, null);
+			        }
+			        Intent intent = new Intent(MainActivity.this, CameraPre.class);
+			        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+			        startActivity(intent); //アクティビティの切り替え
 				}
 			});
             
